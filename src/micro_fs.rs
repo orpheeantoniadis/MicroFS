@@ -2,17 +2,16 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::mem;
 
-const IMAGE: &str = "micro_fs.iso";
 const MAGIC: u16 = 0xaa55;
 
-pub fn create() {
-    write_super_block();
+pub fn create(image: &str, label: &str, bs: u16, size: usize) {
+    write_super_block(image, label, bs);
 }
 
-fn write_super_block() {
+fn write_super_block(image: &str, label: &str, bs: u16) {
     unsafe {
-        let superblock = SuperBlock::new();
-        let mut file = File::create(IMAGE).expect("Failed to create file!");
+        let superblock = SuperBlock::new(label, bs);
+        let mut file = File::create(image).expect("Failed to create file!");
         file.write_all(&[0;11]).expect("Failed to write in file!");
         file.write_all(&(mem::transmute::<u16, [u8; 2]>(superblock.block_size))).expect("Failed to write in file!");
         file.write_all(&[0;23]).expect("Failed to write in file!");
@@ -37,13 +36,20 @@ struct SuperBlock {
     signature: u16
 }
 impl SuperBlock {
-    fn new() -> SuperBlock {
+    fn new(label: &str, bs: u16) -> SuperBlock {
+        let mut raw_label : [u8;8] = [0;8];
+        let mut i = 0;
+        for byte in label.bytes() {
+            raw_label[i] = byte;
+            i += 1;
+            if i == 8 { break; }
+        }
         SuperBlock {
-            block_size: 512,
+            block_size: bs,
             fat_size: 1,
             version: 1,
             root_entry: 2,
-            label: [b'M', b'i', b'c', b'r', b'o', b'F', b'S', b'\0'],
+            label: raw_label,
             signature: MAGIC
         }
     }
