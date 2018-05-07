@@ -1,8 +1,7 @@
 #![crate_name = "micro_fs"]
 
-extern crate fs;
-use fs::*;
+extern crate micro_fs;
 
 fn main() {
-    println!("Hello, world!");
+    micro_fs::create();
 }

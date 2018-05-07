@@ -1,5 +1,5 @@
 #![crate_name = "micro_fs"]
-#![crate_type = "lib" ]
+#![crate_type = "lib"]
 
-pub mod fs;
-pub use fs::*;
+pub mod micro_fs;
+pub use micro_fs::*;
