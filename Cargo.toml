@@ -1,0 +1,6 @@
+[package]
+name = "micro_fs"
+version = "0.1.0"
+authors = ["orpheeantoniadis <orphee.antoniadis@gmail.com>"]
+
+[dependencies]
