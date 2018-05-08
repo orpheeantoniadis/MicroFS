@@ -64,7 +64,7 @@ fn main() {
                     }
                 };
                 println!("");
-                fs.create(image, &label, bs, size);
+                fs.create(&label, bs, size);
             },
             2 => {
                 println!("\n[0] File :");

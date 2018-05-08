@@ -4,17 +4,17 @@ use std::mem;
 use super::*;
 
 impl MicroFS {
-    pub fn create(&mut self, image: &str, label: &str, bs: u8, size: usize) {
-        self.file = File::create(image).expect("Failed to create file!");
-        self.write_super_block(label, bs);
+    pub fn create(&mut self, label: &str, bs: u8, size: usize) {
+        let mut file = File::create(self.image.clone()).expect("Failed to create file!");
+        self.write_super_block(&mut file, label, bs);
         println!("Super block written to image.");
         for _i in 0..self.sb.fat_size {
-            self.file.write_all(&[0xff;SECTOR_SIZE]).expect("Failed to write in file!");
+            file.write_all(&[0xff;SECTOR_SIZE]).expect("Failed to write in file!");
         }
         println!("FAT written to image.");
         let rest = (size / SECTOR_SIZE) - (self.sb.fat_size as usize + 1);
         for _i in 0..rest {
-            self.file.write_all(&[0;SECTOR_SIZE]).expect("Failed to write in file!");
+            file.write_all(&[0;SECTOR_SIZE]).expect("Failed to write in file!");
         }
         println!("Rest of image written.");
         println!("Total bytes = {}", (size / SECTOR_SIZE) * SECTOR_SIZE);
@@ -22,34 +22,34 @@ impl MicroFS {
         println!("Total blocks = {}", size / (SECTOR_SIZE * bs as usize));
     }
 
-    fn write_super_block(&mut self, label: &str, bs: u8) {
+    fn write_super_block(&mut self, file: &mut File, label: &str, bs: u8) {
         unsafe {
             self.sb = SuperBlock::new(label, bs);
-            self.file.write_all(&[0;11]).expect("Failed to write in file!");
-            self.file.write_all(&(mem::transmute::<u16, [u8; 2]>(self.sb.sector_size))).expect("Failed to write in file!");
-            self.file.write_all(&(mem::transmute::<u8, [u8; 1]>(self.sb.block_size))).expect("Failed to write in file!");
-            self.file.write_all(&[0;22]).expect("Failed to write in file!");
-            self.file.write_all(&(mem::transmute::<u32, [u8; 4]>(self.sb.fat_size))).expect("Failed to write in file!");
-            self.file.write_all(&[0;2]).expect("Failed to write in file!");
-            self.file.write_all(&(mem::transmute::<u16, [u8; 2]>(self.sb.version))).expect("Failed to write in file!");
-            self.file.write_all(&(mem::transmute::<u32, [u8; 4]>(self.sb.root_entry))).expect("Failed to write in file!");
-            self.file.write_all(&[0;34]).expect("Failed to write in file!");
-            self.file.write_all(&(self.sb.label)).expect("Failed to write in file!");
-            self.file.write_all(&[0;420]).expect("Failed to write in file!");
-            self.file.write_all(&(mem::transmute::<u16, [u8; 2]>(self.sb.signature))).expect("Failed to write in file!");
+            file.write_all(&[0;11]).expect("Failed to write in file!");
+            file.write_all(&(mem::transmute::<u16, [u8; 2]>(self.sb.sector_size))).expect("Failed to write in file!");
+            file.write_all(&(mem::transmute::<u8, [u8; 1]>(self.sb.block_size))).expect("Failed to write in file!");
+            file.write_all(&[0;22]).expect("Failed to write in file!");
+            file.write_all(&(mem::transmute::<u32, [u8; 4]>(self.sb.fat_size))).expect("Failed to write in file!");
+            file.write_all(&[0;2]).expect("Failed to write in file!");
+            file.write_all(&(mem::transmute::<u16, [u8; 2]>(self.sb.version))).expect("Failed to write in file!");
+            file.write_all(&(mem::transmute::<u32, [u8; 4]>(self.sb.root_entry))).expect("Failed to write in file!");
+            file.write_all(&[0;34]).expect("Failed to write in file!");
+            file.write_all(&(self.sb.label)).expect("Failed to write in file!");
+            file.write_all(&[0;420]).expect("Failed to write in file!");
+            file.write_all(&(mem::transmute::<u16, [u8; 2]>(self.sb.signature))).expect("Failed to write in file!");
         }
     }
 }
 
 #[repr(C, packed)]
 pub struct SuperBlock {
-    sector_size: u16,
-    block_size: u8,
-    fat_size: u32,
-    version: u16,
-    root_entry: u32,
-    label: [u8;8],
-    signature: u16
+    pub sector_size: u16,
+    pub block_size: u8,
+    pub fat_size: u32,
+    pub version: u16,
+    pub root_entry: u32,
+    pub label: [u8;8],
+    pub signature: u16
 }
 impl SuperBlock {
     pub fn new(label: &str, bs: u8) -> SuperBlock {

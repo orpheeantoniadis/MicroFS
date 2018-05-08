@@ -12,7 +12,7 @@ const MAGIC: u16 = 0xaa55;
 const SECTOR_SIZE: usize = 0x200;
 
 pub struct MicroFS {
-    file: File,
+    image: String,
     sb: SuperBlock
 }
 impl MicroFS {
@@ -28,12 +28,12 @@ impl MicroFS {
                     let vector: Vec<u8> = Vec::from(&(buffer[82..90]));
                     let label = String::from_utf8(vector).unwrap();
                     let sb = SuperBlock::new(&label, bs);
-                    println!("\n{} already exists, you can modify it using the menu", image);
-                    return MicroFS { file: file, sb: sb };
+                    println!("\n{} is a valid image. You can modify it using the menu.", image);
+                    return MicroFS { image: image.to_string(), sb: sb };
                 }
             }
-            println!("\n{} does not exist, create it first with the menu", image);
-            return MicroFS { file: mem::uninitialized(), sb: mem::uninitialized() };
+            println!("\n{} does not exist. You should create it first with the menu.", image);
+            return MicroFS { image: image.to_string(), sb: mem::uninitialized() };
         }
     }
 }
