@@ -5,6 +5,7 @@ use std::process;
 use std::env;
 
 extern crate micro_fs;
+use micro_fs::*;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -13,6 +14,7 @@ fn main() {
         process::exit(1);
     }
     let image = &args[1];
+    let mut fs = MicroFS::new();
     
     loop {
         let mut choice = String::new();
@@ -61,7 +63,7 @@ fn main() {
                         continue;
                     }
                 };
-                micro_fs::create(image, &label, bs, size);
+                fs.create(image, &label, bs, size);
             },
             2 => println!("add"),
             3 => println!("del"),
