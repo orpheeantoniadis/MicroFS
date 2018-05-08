@@ -1,22 +1,25 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::mem;
-use super::MicroFS;
-
-const MAGIC: u16 = 0xaa55;
-const SECTOR_SIZE: usize = 0x200;
+use super::*;
 
 impl MicroFS {
     pub fn create(&mut self, image: &str, label: &str, bs: u8, size: usize) {
         self.file = File::create(image).expect("Failed to create file!");
         self.write_super_block(label, bs);
+        println!("Super block written to image.");
         for _i in 0..self.sb.fat_size {
             self.file.write_all(&[0xff;SECTOR_SIZE]).expect("Failed to write in file!");
         }
+        println!("FAT written to image.");
         let rest = (size / SECTOR_SIZE) - (self.sb.fat_size as usize + 1);
         for _i in 0..rest {
             self.file.write_all(&[0;SECTOR_SIZE]).expect("Failed to write in file!");
         }
+        println!("Rest of image written.");
+        println!("Total bytes = {}", (size / SECTOR_SIZE) * SECTOR_SIZE);
+        println!("Total sectors = {}", size / SECTOR_SIZE);
+        println!("Total blocks = {}", size / (SECTOR_SIZE * bs as usize));
     }
 
     fn write_super_block(&mut self, label: &str, bs: u8) {
@@ -49,7 +52,7 @@ pub struct SuperBlock {
     signature: u16
 }
 impl SuperBlock {
-    fn new(label: &str, bs: u8) -> SuperBlock {
+    pub fn new(label: &str, bs: u8) -> SuperBlock {
         let mut raw_label : [u8;8] = [0;8];
         let mut i = 0;
         for byte in label.bytes() {
@@ -70,11 +73,4 @@ impl SuperBlock {
             signature: MAGIC
         }
     }
-}
-
-#[repr(C, packed)]
-struct Entry {
-    name: [u8;26],
-    start: u16,
-    size: u32
 }

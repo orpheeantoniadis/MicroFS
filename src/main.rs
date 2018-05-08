@@ -14,7 +14,7 @@ fn main() {
         process::exit(1);
     }
     let image = &args[1];
-    let mut fs = MicroFS::new();
+    let mut fs = MicroFS::new(image);
     
     loop {
         let mut choice = String::new();
@@ -39,11 +39,11 @@ fn main() {
         match choice {
             0 => break,
             1 => {
-                println!("label :");
+                println!("\n[0] Label :");
                 let mut label = String::new();
                 io::stdin().read_line(&mut label).expect("Failed to read line !");
                 label = label.trim().to_string();
-                println!("block size :");
+                println!("[1] Block size :");
                 let mut str_bs = String::new();
                 io::stdin().read_line(&mut str_bs).expect("Failed to read line !");
                 let bs = match str_bs.trim().parse() {
@@ -53,7 +53,7 @@ fn main() {
                         continue;
                     }
                 };
-                println!("fs size :");
+                println!("[2] FS size :");
                 let mut str_size = String::new();
                 io::stdin().read_line(&mut str_size).expect("Failed to read line !");
                 let size = match str_size.trim().parse() {
@@ -63,9 +63,16 @@ fn main() {
                         continue;
                     }
                 };
+                println!("");
                 fs.create(image, &label, bs, size);
             },
-            2 => println!("add"),
+            2 => {
+                println!("\n[0] File :");
+                let mut file = String::new();
+                io::stdin().read_line(&mut file).expect("Failed to read line !");
+                file = file.trim().to_string();
+                fs.add(&file);
+            },
             3 => println!("del"),
             4 => println!("list"),
             5 => println!("info"),
