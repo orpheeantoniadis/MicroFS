@@ -3,10 +3,12 @@ use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::SeekFrom;
+use std::str;
 
 mod create;
 mod add;
 mod save;
+mod del;
 
 const MAGIC: u16 = 0xaa55;
 const SECTOR_SIZE: usize = 0x200;
@@ -154,4 +156,15 @@ impl Entry {
             size: 0
         }
     }
+}
+
+pub fn bytes_to_str(bytes: &[u8]) -> &str {
+    let mut cnt = 0;
+    for &byte in bytes {
+        if byte == 0 {
+            break;
+        }
+        cnt += 1;
+    }
+    str::from_utf8(&bytes[0..cnt]).expect("Found invalid UTF-8")
 }

@@ -17,7 +17,7 @@ impl MicroFS {
         
         let mut entries = self.empty_blocks(&mut entry);
         self.entries.push(entry);
-        self.update_fat(&mut entries);
+        self.update_fat(&mut entries, true);
     }
     
     fn empty_blocks(&mut self, entry: &mut Entry) -> Vec<usize> {
@@ -40,12 +40,16 @@ impl MicroFS {
         return blocks;
     }
     
-    fn update_fat(&mut self, blocks: &mut Vec<usize>) {
+    pub fn update_fat(&mut self, blocks: &mut Vec<usize>, add: bool) {
         for i in 0..blocks.len() {
-            if i == (blocks.len() - 1) {
-                (self.fat)[blocks[i]] = 0;
+            if add {
+                if i == (blocks.len() - 1) {
+                    (self.fat)[blocks[i]] = 0;
+                } else {
+                    (self.fat)[blocks[i]] = blocks[i+1] as u8;
+                }
             } else {
-                (self.fat)[blocks[i]] = blocks[i+1] as u8;
+                (self.fat)[blocks[i]] = 0xff;
             }
         }
     }

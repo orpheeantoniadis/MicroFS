@@ -75,7 +75,14 @@ fn main() {
                 println!("");
                 fs.add(&filename);
             },
-            3 => println!("del"),
+            3 => {
+                println!("\n[0] File :");
+                let mut filename = String::new();
+                io::stdin().read_line(&mut filename).expect("Failed to read line !");
+                filename = filename.trim().to_string();
+                println!("");
+                fs.del(&filename);
+            },
             4 => println!("list"),
             5 => println!("info"),
             6 => fs.save(),

@@ -2,7 +2,6 @@ use std::io::prelude::*;
 use std::io::SeekFrom;
 use std::fs::OpenOptions;
 use std::fs::metadata;
-use std::str;
 use super::*;
 
 impl MicroFS {
@@ -34,7 +33,7 @@ impl MicroFS {
         }
     }
     
-    fn get_blocks(&mut self, entry: &mut Entry) -> Vec<usize> {
+    pub fn get_blocks(&mut self, entry: &mut Entry) -> Vec<usize> {
         let mut blocks = Vec::new();
         let mut block = entry.start as usize;
         blocks.push(block);
@@ -65,15 +64,4 @@ impl MicroFS {
             cnt += 1;
         }
     }
-}
-
-fn bytes_to_str(bytes: &[u8]) -> &str {
-    let mut cnt = 0;
-    for &byte in bytes {
-        if byte == 0 {
-            break;
-        }
-        cnt += 1;
-    }
-    str::from_utf8(&bytes[0..cnt]).expect("Found invalid UTF-8")
 }
