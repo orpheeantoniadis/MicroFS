@@ -14,7 +14,7 @@ const SECTOR_SIZE: usize = 0x200;
 pub struct MicroFS {
     image: String,
     sb: SuperBlock,
-    fat: *mut [u8],
+    fat: Vec<u8>,
     entries: Vec<Entry>
 }
 impl MicroFS {
@@ -34,12 +34,11 @@ impl MicroFS {
                     let mut fs = MicroFS {
                         image: image.to_string(),
                         sb: sb,
-                        fat: mem::uninitialized(),
+                        fat: Vec::new(),
                         entries: Vec::new()
                     };
                     fs.set_fat();
                     fs.set_entries();
-                    println!("{:?}", fs.entries);
                     println!("\n{} is a valid image. You can modify it using the menu.", image);
                     return fs;
                 }
@@ -48,7 +47,7 @@ impl MicroFS {
             return MicroFS {
                 image: image.to_string(),
                 sb: mem::uninitialized(),
-                fat: mem::uninitialized(),
+                fat: Vec::new(),
                 entries:  Vec::new()
             };
         }
@@ -70,7 +69,9 @@ impl MicroFS {
         let mut file = File::open(self.image.clone()).expect("File not found !");
         let mut raw_fat = Vec::new();
         file.read_to_end(&mut raw_fat).expect("Something went wrong reading the file !");
-        self.fat = &mut (raw_fat[SECTOR_SIZE..(SECTOR_SIZE+self.fat_size())]);
+        for i in SECTOR_SIZE..(SECTOR_SIZE+self.fat_size()) {
+            self.fat.push(raw_fat[i]);
+        }
     }
     
     fn set_entries(&mut self) {

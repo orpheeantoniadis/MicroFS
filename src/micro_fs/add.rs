@@ -21,35 +21,31 @@ impl MicroFS {
     }
     
     fn empty_blocks(&mut self, entry: &mut Entry) -> Vec<usize> {
-        unsafe {
-            let entries_size = self.entries_size() / (SECTOR_SIZE * (self.sb.block_size as usize));
-            
-            let mut cnt = 0;
-            let mut blocks = Vec::new();
-            for i in (entries_size + (self.sb.root_entry as usize))..(*(self.fat)).len() {
-                if (*(self.fat))[i] == 0xff {
-                    if cnt == 0 {
-                        entry.start = i as u16;
-                    }
-                    blocks.push(i);
-                    cnt += 1;
+        let entries_size = self.entries_size() / (SECTOR_SIZE * (self.sb.block_size as usize));
+        
+        let mut cnt = 0;
+        let mut blocks = Vec::new();
+        for i in (entries_size + (self.sb.root_entry as usize))..(*(self.fat)).len() {
+            if (self.fat)[i] == 0xff {
+                if cnt == 0 {
+                    entry.start = i as u16;
                 }
-                if cnt >= (entry.size / SECTOR_SIZE as u32 + 1) {
-                    break;
-                }
+                blocks.push(i);
+                cnt += 1;
             }
-            return blocks;
+            if cnt >= (entry.size / SECTOR_SIZE as u32 + 1) {
+                break;
+            }
         }
+        return blocks;
     }
     
     fn update_fat(&mut self, blocks: &mut Vec<usize>) {
-        unsafe {
-            for i in 0..blocks.len() {
-                if i == (blocks.len() - 1) {
-                    (*(self.fat))[blocks[i]] = 0;
-                } else {
-                    (*(self.fat))[blocks[i]] = blocks[i+1] as u8;
-                }
+        for i in 0..blocks.len() {
+            if i == (blocks.len() - 1) {
+                (self.fat)[blocks[i]] = 0;
+            } else {
+                (self.fat)[blocks[i]] = blocks[i+1] as u8;
             }
         }
     }

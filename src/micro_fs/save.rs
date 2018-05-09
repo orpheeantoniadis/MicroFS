@@ -1,7 +1,7 @@
 use std::io::prelude::*;
 use std::io::SeekFrom;
 use std::fs::OpenOptions;
-// use std::mem;
+use std::fs::metadata;
 use std::str;
 use super::*;
 
@@ -10,7 +10,16 @@ impl MicroFS {
         unsafe {
             let mut image = OpenOptions::new().read(true).write(true).open(self.image.clone()).expect("File not found !");
             image.seek(SeekFrom::Start(SECTOR_SIZE as u64)).expect("File seek failed !");
-            image.write_all(&*(self.fat)).expect("Failed to write in file!");
+            image.write_all(&(self.fat)).expect("Failed to write in file!");
+            
+            // let size = metadata(self.image.clone()).expect("Failed getting metadata!").len() as usize;
+            // let rest = (size / SECTOR_SIZE) - (self.sb.fat_size as usize + 1);
+            // for _i in 0..rest {
+            //     image.write_all(&[0;SECTOR_SIZE]).expect("Failed to write in file!");
+            // }
+            // 
+            // image.seek(SeekFrom::Start(self.root_entry() as u64)).expect("File seek failed !");
+            
             for entry in self.entries.clone() {
                 image.write_all(&(entry.name)).expect("Failed to write in file!");
                 image.write_all(&(mem::transmute::<u16, [u8; 2]>(entry.start))).expect("Failed to write in file!");
@@ -27,20 +36,18 @@ impl MicroFS {
     }
     
     fn get_blocks(&mut self, entry: &mut Entry) -> Vec<usize> {
-        unsafe {
-            let mut blocks = Vec::new();
-            let mut block = entry.start as usize;
-            blocks.push(block);
-            loop {
-                block = (*(self.fat))[block] as usize;
-                if block != 0 {
-                    blocks.push(block);
-                } else {
-                    break;
-                }
+        let mut blocks = Vec::new();
+        let mut block = entry.start as usize;
+        blocks.push(block);
+        loop {
+            block = self.fat[block] as usize;
+            if block != 0 {
+                blocks.push(block);
+            } else {
+                break;
             }
-            return blocks;
         }
+        return blocks;
     }
     
     fn write_data(&mut self, entries: &mut Vec<usize>, data: Vec<u8>) {
