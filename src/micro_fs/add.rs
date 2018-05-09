@@ -25,46 +25,43 @@ impl MicroFS {
     }
     
     fn empty_entries(&mut self, entry: &mut Entry) -> Vec<usize> {
-        let mut fs_buffer = Vec::new();
-        let mut file = File::open(self.image.clone()).expect("File not found !");
-        file.read_to_end(&mut fs_buffer).expect("Something went wrong reading the file !");
-        let fat = &mut (fs_buffer[SECTOR_SIZE..(self.sb.fat_size as usize + 1)*SECTOR_SIZE]);
-        let entries_sector_size = (self.sb.fat_size as usize) * SECTOR_SIZE * mem::size_of::<Entry>();
-        let entries_sector_size = entries_sector_size / (SECTOR_SIZE * (self.sb.block_size as usize));
-        
-        let mut cnt = 0;
-        let mut blocks = Vec::new();
-        for i in (entries_sector_size + (self.sb.root_entry as usize))..fat.len() {
-            if fat[i] == 0xff {
-                if cnt == 0 {
-                    entry.start = i as u16;
+        unsafe {
+            let entries_sector_size = (self.sb.fat_size as usize) * SECTOR_SIZE * mem::size_of::<Entry>();
+            let entries_sector_size = entries_sector_size / (SECTOR_SIZE * (self.sb.block_size as usize));
+            
+            let mut cnt = 0;
+            let mut blocks = Vec::new();
+            for i in (entries_sector_size + (self.sb.root_entry as usize))..(*(self.fat)).len() {
+                if (*(self.fat))[i] == 0xff {
+                    if cnt == 0 {
+                        entry.start = i as u16;
+                    }
+                    blocks.push(i);
+                    cnt += 1;
                 }
-                blocks.push(i);
-                cnt += 1;
+                if cnt >= (entry.size / SECTOR_SIZE as u32 + 1) {
+                    break;
+                }
             }
-            if cnt >= (entry.size / SECTOR_SIZE as u32 + 1) {
-                break;
-            }
+            return blocks;
         }
-        return blocks;
     }
     
     fn write_fat_entries(&mut self, entries: &mut Vec<usize>) {
-        let mut fs_buffer = Vec::new();
-        let mut file = OpenOptions::new().read(true).write(true).open(self.image.clone()).expect("File not found !");
-        file.read_to_end(&mut fs_buffer).expect("Something went wrong reading the file !");
-        let fat = &mut (fs_buffer[SECTOR_SIZE..(self.sb.fat_size as usize + 1)*SECTOR_SIZE]);
-        for i in 0..entries.len() {
-            if i == (entries.len() - 1) {
-                fat[entries[i]] = 0;
-            } else {
-                fat[entries[i]] = entries[i+1] as u8;
+        unsafe {
+            let mut file = OpenOptions::new().read(true).write(true).open(self.image.clone()).expect("File not found !");
+            for i in 0..entries.len() {
+                if i == (entries.len() - 1) {
+                    (*(self.fat))[entries[i]] = 0;
+                } else {
+                    (*(self.fat))[entries[i]] = entries[i+1] as u8;
+                }
             }
-        }
-        file.seek(SeekFrom::Start(SECTOR_SIZE as u64)).expect("File seek failed !");
-        match file.write_all(fat) {
-            Ok(..) => {},
-            Err(e) => println!("{}", e),
+            file.seek(SeekFrom::Start(SECTOR_SIZE as u64)).expect("File seek failed !");
+            match file.write_all(&*(self.fat)) {
+                Ok(..) => {},
+                Err(e) => println!("{}", e),
+            }
         }
     }
     
@@ -108,11 +105,12 @@ impl MicroFS {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
-struct Entry {
-    name: [u8;26],
-    start: u16,
-    size: u32
+pub struct Entry {
+    pub name: [u8;26],
+    pub start: u16,
+    pub size: u32
 }
 impl Entry {
     fn new(name: &str) -> Entry {

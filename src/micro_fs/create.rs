@@ -7,6 +7,8 @@ impl MicroFS {
     pub fn create(&mut self, label: &str, bs: u8, size: usize) {
         let mut file = File::create(self.image.clone()).expect("Failed to create file!");
         self.write_super_block(&mut file, label, bs);
+        self.set_fat();
+        self.set_entries();
         println!("Super block written to image.");
         for _i in 0..self.sb.fat_size {
             file.write_all(&[0xff;SECTOR_SIZE]).expect("Failed to write in file!");
