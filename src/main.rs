@@ -26,6 +26,7 @@ fn main() {
 		println!("3: del <file>");
 		println!("4: list");
 		println!("5: info");
+        println!("6: save");
         
         io::stdin().read_line(&mut choice).expect("Failed to read line !");
         let choice : u8 = match choice.trim().parse() {
@@ -77,6 +78,7 @@ fn main() {
             3 => println!("del"),
             4 => println!("list"),
             5 => println!("info"),
+            6 => fs.save(),
             _ => println!("Choice {} does not exist", choice),
         }
     }

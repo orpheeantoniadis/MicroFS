@@ -1,4 +1,3 @@
-use micro_fs::add::Entry;
 use std::mem;
 use std::fs;
 use std::fs::File;
@@ -7,8 +6,7 @@ use std::io::SeekFrom;
 
 mod create;
 mod add;
-
-use self::create::*;
+mod save;
 
 const MAGIC: u16 = 0xaa55;
 const SECTOR_SIZE: usize = 0x200;
@@ -17,7 +15,7 @@ pub struct MicroFS {
     image: String,
     sb: SuperBlock,
     fat: *mut [u8],
-    entries: *mut Vec<Entry>
+    entries: Vec<Entry>
 }
 impl MicroFS {
     pub fn new(image: &str) -> MicroFS {
@@ -37,10 +35,11 @@ impl MicroFS {
                         image: image.to_string(),
                         sb: sb,
                         fat: mem::uninitialized(),
-                        entries:  mem::uninitialized()
+                        entries: Vec::new()
                     };
                     fs.set_fat();
                     fs.set_entries();
+                    println!("{:?}", fs.entries);
                     println!("\n{} is a valid image. You can modify it using the menu.", image);
                     return fs;
                 }
@@ -50,7 +49,7 @@ impl MicroFS {
                 image: image.to_string(),
                 sb: mem::uninitialized(),
                 fat: mem::uninitialized(),
-                entries:  mem::uninitialized()
+                entries:  Vec::new()
             };
         }
     }
@@ -78,9 +77,7 @@ impl MicroFS {
         unsafe {
             let mut file = File::open(self.image.clone()).expect("File not found !");
             
-            let mut entries = Vec::new();
             let mut cnt = 0;
-            println!("Size = {}", self.entries_size());
             while cnt < self.entries_size() {
                 let mut raw_name = [0;26];
                 file.seek(SeekFrom::Start((self.root_entry() + cnt) as u64)).expect("File seek failed !");
@@ -92,11 +89,68 @@ impl MicroFS {
                     let mut raw_size = [0;4];
                     file.read(&mut raw_size).expect("Something went wrong reading the file !");
                     let size = mem::transmute::<[u8;4], u32>(raw_size);
-                    entries.push(Entry { name: raw_name, start: start, size: size });
+                    self.entries.push(Entry { name: raw_name, start: start, size: size });
                 }
                 cnt += mem::size_of::<Entry>();
             }
-            self.entries = &mut entries;
+        }
+    }
+}
+
+#[repr(C, packed)]
+pub struct SuperBlock {
+    pub sector_size: u16,
+    pub block_size: u8,
+    pub fat_size: u32,
+    pub version: u16,
+    pub root_entry: u32,
+    pub label: [u8;8],
+    pub signature: u16
+}
+impl SuperBlock {
+    pub fn new(label: &str, bs: u8) -> SuperBlock {
+        let mut raw_label : [u8;8] = [0;8];
+        let mut i = 0;
+        for byte in label.bytes() {
+            raw_label[i] = byte;
+            i += 1;
+            if i == 8 { break; }
+        }
+        // fat is one block long + rest of first block
+        // so block_size + block_size - 1 (superblock is 1 sector long)
+        let fat_size = 2 * (bs as u32) - 1;
+        SuperBlock {
+            sector_size: SECTOR_SIZE as u16,
+            block_size: bs,
+            fat_size: fat_size,
+            version: 1,
+            root_entry: 2,
+            label: raw_label,
+            signature: MAGIC
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+#[repr(C, packed)]
+pub struct Entry {
+    pub name: [u8;26],
+    pub start: u16,
+    pub size: u32
+}
+impl Entry {
+    fn new(name: &str) -> Entry {
+        let mut raw_name : [u8;26] = [0;26];
+        let mut i = 0;
+        for byte in name.bytes() {
+            raw_name[i] = byte;
+            i += 1;
+            if i == 26 { break; }
+        }
+        Entry {
+            name: raw_name,
+            start: 0,
+            size: 0
         }
     }
 }
