@@ -68,10 +68,11 @@ fn main() {
             },
             2 => {
                 println!("\n[0] File :");
-                let mut file = String::new();
-                io::stdin().read_line(&mut file).expect("Failed to read line !");
-                file = file.trim().to_string();
-                fs.add(&file);
+                let mut filename = String::new();
+                io::stdin().read_line(&mut filename).expect("Failed to read line !");
+                filename = filename.trim().to_string();
+                println!("");
+                fs.add(&filename);
             },
             3 => println!("del"),
             4 => println!("list"),

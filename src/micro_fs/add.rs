@@ -18,26 +18,23 @@ impl MicroFS {
         println!("Entry size (sectors) = {}", file_buffer.len() / SECTOR_SIZE + 1);
         println!("Entry size (blocks) = {}", file_buffer.len() / (SECTOR_SIZE * self.sb.block_size as usize) + 1);
         
-        // find fat entries
-        let entries = self.get_fat_entries(&mut entry);
-        
-        // write fat entries
-        self.write_fat_entries(entries);
-        
-        // write root entry
+        let mut entries = self.empty_entries(&mut entry);
+        self.write_fat_entries(&mut entries);
         self.write_root_entry(&mut entry);
-        
-        
+        self.write_data(&mut entries, file_buffer);
     }
     
-    fn get_fat_entries(&mut self, entry: &mut Entry) -> Vec<usize> {
+    fn empty_entries(&mut self, entry: &mut Entry) -> Vec<usize> {
         let mut fs_buffer = Vec::new();
         let mut file = File::open(self.image.clone()).expect("File not found !");
         file.read_to_end(&mut fs_buffer).expect("Something went wrong reading the file !");
         let fat = &mut (fs_buffer[SECTOR_SIZE..(self.sb.fat_size as usize + 1)*SECTOR_SIZE]);
+        let entries_sector_size = (self.sb.fat_size as usize) * SECTOR_SIZE * mem::size_of::<Entry>();
+        let entries_sector_size = entries_sector_size / (SECTOR_SIZE * (self.sb.block_size as usize));
+        
         let mut cnt = 0;
         let mut blocks = Vec::new();
-        for i in (self.sb.root_entry as usize)..fat.len() {
+        for i in (entries_sector_size + (self.sb.root_entry as usize))..fat.len() {
             if fat[i] == 0xff {
                 if cnt == 0 {
                     entry.start = i as u16;
@@ -52,7 +49,7 @@ impl MicroFS {
         return blocks;
     }
     
-    fn write_fat_entries(&mut self, entries: Vec<usize>) {
+    fn write_fat_entries(&mut self, entries: &mut Vec<usize>) {
         let mut fs_buffer = Vec::new();
         let mut file = OpenOptions::new().read(true).write(true).open(self.image.clone()).expect("File not found !");
         file.read_to_end(&mut fs_buffer).expect("Something went wrong reading the file !");
@@ -76,11 +73,9 @@ impl MicroFS {
             let mut fs_buffer = Vec::new();
             let mut file = OpenOptions::new().read(true).write(true).open(self.image.clone()).expect("File not found !");
             file.read_to_end(&mut fs_buffer).expect("Something went wrong reading the file !");
-            let offset = (self.sb.fat_size as usize + 1) * SECTOR_SIZE;
+            let offset = (self.sb.root_entry as usize) * SECTOR_SIZE;
             let size = (self.sb.fat_size as usize) * SECTOR_SIZE * mem::size_of::<Entry>();
             let entries = &mut (fs_buffer[offset..(offset+size)]);
-            println!("Offset = {}", offset);
-            println!("Size = {}", size);
             let mut i = 0;
             while i < size {
                 if entries[i] == 0 {
@@ -92,6 +87,23 @@ impl MicroFS {
                 }
                 i += mem::size_of::<Entry>();
             }
+        }
+    }
+    
+    fn write_data(&mut self, entries: &mut Vec<usize>, data: Vec<u8>) {
+        let mut file = OpenOptions::new().read(true).write(true).open(self.image.clone()).expect("File not found !");
+        let mut cnt = 0;
+        for entry in entries.iter() {
+            let offset = entry * (self.sb.block_size as usize) * SECTOR_SIZE;
+            file.seek(SeekFrom::Start(offset as u64)).expect("File seek failed !");
+            
+            let data_block_start = cnt * (self.sb.block_size as usize) * SECTOR_SIZE;
+            let mut data_block_end = data_block_start + (self.sb.block_size as usize) * SECTOR_SIZE;
+            if data_block_end > data.len() {
+                data_block_end = data.len();
+            }
+            file.write_all(&(data[data_block_start..data_block_end])).expect("Failed to write in file!");
+            cnt += 1;
         }
     }
 }
