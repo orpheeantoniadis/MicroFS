@@ -1,4 +1,3 @@
-use std::io::prelude::*;
 use std::io::SeekFrom;
 use std::fs::OpenOptions;
 use std::fs::metadata;
@@ -30,38 +29,6 @@ impl MicroFS {
                 let mut blocks = self.get_blocks(&mut entry.clone());
                 self.write_data(&mut blocks, file_buffer);
             }
-        }
-    }
-    
-    pub fn get_blocks(&mut self, entry: &mut Entry) -> Vec<usize> {
-        let mut blocks = Vec::new();
-        let mut block = entry.start as usize;
-        blocks.push(block);
-        loop {
-            block = self.fat[block] as usize;
-            if block != 0 {
-                blocks.push(block);
-            } else {
-                break;
-            }
-        }
-        return blocks;
-    }
-    
-    fn write_data(&mut self, entries: &mut Vec<usize>, data: Vec<u8>) {
-        let mut file = OpenOptions::new().read(true).write(true).open(self.image.clone()).expect("File not found !");
-        let mut cnt = 0;
-        for entry in entries.iter() {
-            let offset = entry * (self.sb.block_size as usize) * SECTOR_SIZE;
-            file.seek(SeekFrom::Start(offset as u64)).expect("File seek failed !");
-            
-            let data_block_start = cnt * (self.sb.block_size as usize) * SECTOR_SIZE;
-            let mut data_block_end = data_block_start + (self.sb.block_size as usize) * SECTOR_SIZE;
-            if data_block_end > data.len() {
-                data_block_end = data.len();
-            }
-            file.write_all(&(data[data_block_start..data_block_end])).expect("Failed to write in file!");
-            cnt += 1;
         }
     }
 }

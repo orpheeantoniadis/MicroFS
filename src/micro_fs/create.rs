@@ -1,6 +1,3 @@
-use std::fs::File;
-use std::io::prelude::*;
-use std::mem;
 use super::*;
 
 impl MicroFS {

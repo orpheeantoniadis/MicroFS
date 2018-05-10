@@ -2,13 +2,17 @@ use std::mem;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
-use std::io::SeekFrom;
 use std::str;
+
+mod utils;
+use self::utils::*;
 
 mod create;
 mod add;
 mod save;
 mod del;
+mod list;
+mod info;
 
 const MAGIC: u16 = 0xaa55;
 const SECTOR_SIZE: usize = 0x200;
@@ -52,50 +56,6 @@ impl MicroFS {
                 fat: Vec::new(),
                 entries:  Vec::new()
             };
-        }
-    }
-    
-    fn fat_size(&mut self) -> usize {
-        (self.sb.fat_size as usize) * SECTOR_SIZE
-    }
-    
-    fn root_entry(&mut self) -> usize {
-        self.sb.root_entry as usize * self.sb.block_size as usize * SECTOR_SIZE
-    }
-    
-    fn entries_size(&mut self) -> usize {
-        (self.sb.fat_size as usize) * SECTOR_SIZE * mem::size_of::<Entry>()
-    }
-    
-    fn set_fat(&mut self) {
-        let mut file = File::open(self.image.clone()).expect("File not found !");
-        let mut raw_fat = Vec::new();
-        file.read_to_end(&mut raw_fat).expect("Something went wrong reading the file !");
-        for i in SECTOR_SIZE..(SECTOR_SIZE+self.fat_size()) {
-            self.fat.push(raw_fat[i]);
-        }
-    }
-    
-    fn set_entries(&mut self) {
-        unsafe {
-            let mut file = File::open(self.image.clone()).expect("File not found !");
-            
-            let mut cnt = 0;
-            while cnt < self.entries_size() {
-                let mut raw_name = [0;26];
-                file.seek(SeekFrom::Start((self.root_entry() + cnt) as u64)).expect("File seek failed !");
-                file.read(&mut raw_name).expect("Something went wrong reading the file !");
-                if raw_name[0] != 0 {
-                    let mut raw_start = [0;2];
-                    file.read(&mut raw_start).expect("Something went wrong reading the file !");
-                    let start = mem::transmute::<[u8;2], u16>(raw_start);
-                    let mut raw_size = [0;4];
-                    file.read(&mut raw_size).expect("Something went wrong reading the file !");
-                    let size = mem::transmute::<[u8;4], u32>(raw_size);
-                    self.entries.push(Entry { name: raw_name, start: start, size: size });
-                }
-                cnt += mem::size_of::<Entry>();
-            }
         }
     }
 }
@@ -156,15 +116,4 @@ impl Entry {
             size: 0
         }
     }
-}
-
-pub fn bytes_to_str(bytes: &[u8]) -> &str {
-    let mut cnt = 0;
-    for &byte in bytes {
-        if byte == 0 {
-            break;
-        }
-        cnt += 1;
-    }
-    str::from_utf8(&bytes[0..cnt]).expect("Found invalid UTF-8")
 }

@@ -83,8 +83,8 @@ fn main() {
                 println!("");
                 fs.del(&filename);
             },
-            4 => println!("list"),
-            5 => println!("info"),
+            4 => fs.list(),
+            5 => fs.info(),
             6 => fs.save(),
             _ => println!("Choice {} does not exist", choice),
         }
