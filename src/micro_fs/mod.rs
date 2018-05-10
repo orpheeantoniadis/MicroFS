@@ -14,7 +14,7 @@ mod del;
 mod list;
 mod info;
 
-const MAGIC: u16 = 0xaa55;
+const MAGIC: u16 = 0x55aa;
 const SECTOR_SIZE: usize = 0x200;
 
 pub struct MicroFS {
