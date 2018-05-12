@@ -1,10 +1,8 @@
-use std::fs::OpenOptions;
-use std::io::SeekFrom;
 use super::*;
 
 impl MicroFS {
     pub fn fat_size(&mut self) -> usize {
-        (self.sb.fat_size as usize) * SECTOR_SIZE
+        self.sb.fat_size as usize
     }
     
     pub fn root_entry(&mut self) -> usize {

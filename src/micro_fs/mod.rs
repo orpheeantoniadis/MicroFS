@@ -1,8 +1,11 @@
 use std::mem;
+use std::str;
+use std::io::prelude::*;
+use std::io::SeekFrom;
 use std::fs;
 use std::fs::File;
-use std::io::prelude::*;
-use std::str;
+use std::fs::OpenOptions;
+
 
 mod utils;
 use self::utils::*;
@@ -36,7 +39,8 @@ impl MicroFS {
                     let bs = raw_sb[13];
                     let raw_label: Vec<u8> = Vec::from(&(raw_sb[82..90]));
                     let label = String::from_utf8(raw_label).unwrap();
-                    let sb = SuperBlock::new(&label, bs);
+                    let size = fs::metadata(image.clone()).expect("Failed getting metadata!").len() as usize;
+                    let sb = SuperBlock::new(&label, bs, size);
                     let mut fs = MicroFS {
                         image: image.to_string(),
                         sb: sb,
@@ -71,7 +75,7 @@ pub struct SuperBlock {
     pub signature: u16
 }
 impl SuperBlock {
-    pub fn new(label: &str, bs: u8) -> SuperBlock {
+    pub fn new(label: &str, bs: u8, size: usize) -> SuperBlock {
         let mut raw_label : [u8;8] = [0;8];
         let mut i = 0;
         for byte in label.bytes() {
@@ -79,15 +83,17 @@ impl SuperBlock {
             i += 1;
             if i == 8 { break; }
         }
-        // fat is one block long + rest of first block
-        // so block_size + block_size - 1 (superblock is 1 sector long)
-        let fat_size = 2 * (bs as u32) - 1;
+        let fat_size = size / (SECTOR_SIZE * bs as usize);
+        let mut root_entry = (SECTOR_SIZE + fat_size) / (SECTOR_SIZE * bs as usize);
+        if ((SECTOR_SIZE + fat_size) % (SECTOR_SIZE * bs as usize)) != 0 {
+            root_entry += 1;
+        }
         SuperBlock {
             sector_size: SECTOR_SIZE as u16,
             block_size: bs,
-            fat_size: fat_size,
+            fat_size: fat_size as u32,
             version: 1,
-            root_entry: 2,
+            root_entry: root_entry as u32,
             label: raw_label,
             signature: MAGIC
         }
