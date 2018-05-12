@@ -59,7 +59,7 @@ impl MicroFS {
                 blocks.push(i);
                 cnt += 1;
             }
-            if cnt >= (entry.size / SECTOR_SIZE as u32 + 1) {
+            if cnt >= (entry.size as usize / (SECTOR_SIZE * self.sb.block_size as usize) + 1) {
                 break;
             }
         }
