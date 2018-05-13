@@ -10,7 +10,7 @@ impl MicroFS {
     }
     
     pub fn entries_size(&mut self) -> usize {
-        self.fat_size() * mem::size_of::<Entry>()
+        self.sb.block_size as usize * SECTOR_SIZE
     }
     
     pub fn set_fat(&mut self) {
