@@ -6,7 +6,7 @@ use std::fs;
 use std::fs::File;
 use std::fs::OpenOptions;
 
-mod utils;
+pub mod utils;
 use self::utils::*;
 
 mod create;
@@ -16,14 +16,15 @@ mod del;
 mod list;
 mod info;
 
-const MAGIC: u16 = 0x55aa;
-const SECTOR_SIZE: usize = 0x200;
+pub const MAGIC: u16 = 0x55aa;
+pub const SECTOR_SIZE: usize = 0x200;
 
+#[derive(Debug)]
 pub struct MicroFS {
-    image: String,
-    sb: SuperBlock,
-    fat: Vec<u8>,
-    entries: Vec<Entry>
+    pub image: String,
+    pub sb: SuperBlock,
+    pub fat: Vec<u8>,
+    pub entries: Vec<Entry>
 }
 impl MicroFS {
     pub fn new(image: &str) -> MicroFS {
@@ -63,7 +64,8 @@ impl MicroFS {
     }
 }
 
-#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+#[repr(C)]
 pub struct SuperBlock {
     pub sector_size: u16,
     pub block_size: u8,
@@ -100,7 +102,7 @@ impl SuperBlock {
 }
 
 #[derive(Debug, Copy, Clone)]
-#[repr(C, packed)]
+#[repr(C)]
 pub struct Entry {
     pub name: [u8;26],
     pub start: u16,

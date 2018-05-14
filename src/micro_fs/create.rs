@@ -16,7 +16,7 @@ impl MicroFS {
         for _i in 0..rest {
             file.write_all(&[0;SECTOR_SIZE]).expect("Failed to write in file!");
         }
-        self.set_entries();
+        // self.set_entries();
         println!("Rest of image written.");
         println!("Total bytes = {}", (size / SECTOR_SIZE) * SECTOR_SIZE);
         println!("Total sectors = {}", size / SECTOR_SIZE);
