@@ -71,7 +71,8 @@ fn save() {
         image: "fs1_test.img".to_string(),
         sb: SuperBlock::new("test", 1, 100000),
         fat: Vec::new(),
-        entries:  Vec::new()
+        entries:  Vec::new(),
+        new_entries: Vec::new()
     };
     
     let mut test_fs = MicroFS::new("fs1_test.img");
@@ -104,7 +105,8 @@ fn remove() {
         image: "fs1_test.img".to_string(),
         sb: SuperBlock::new("test", 1, 100000),
         fat: Vec::new(),
-        entries:  Vec::new()
+        entries:  Vec::new(),
+        new_entries: Vec::new()
     };
     
     let mut test_fs = MicroFS::new("fs1_test.img");

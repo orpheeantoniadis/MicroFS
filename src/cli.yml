@@ -1,0 +1,47 @@
+name: MicroFS
+version: "0.1.0"
+author: Orphée Antoniadis <orphee.antoniadis@gmail.com>
+about: Tools to build a minimal file system
+args:
+    - image:
+        help: Image of the file system
+        required: true
+        index: 1
+subcommands:
+    - create:
+        about: Create the image of the filesystem
+        args:
+            - label:
+                help: Label of the filesystem to create
+                required: true
+                index: 1
+            - block_size:
+                help: Block size of the filesystem to create (in number of sectors)
+                required: true
+                index: 2
+            - size:
+                help: Size of the filesystem to create (in bytes)
+                required: true
+                index: 3
+    
+    - add:
+        about: Add a file to the file system
+        args:
+            - file:
+                help: File to add to the file system
+                required: true
+                index: 1
+
+    - del:
+        about: Remove a file from the file system
+        args:
+            - file:
+                help: File to remove from the file system
+                required: true
+                index: 1
+                
+    - list:
+        about: Display all the files of the file system
+
+    - info:
+        about: Display file system informations
