@@ -95,11 +95,11 @@ impl MicroFS {
         }
     }
     
-    pub fn write_data(&mut self, entries: &mut Vec<usize>, data: Vec<u8>) {
+    pub fn write_data(&mut self, blocks: &mut Vec<usize>, data: Vec<u8>) {
         let mut file = OpenOptions::new().read(true).write(true).open(self.image.clone()).expect("File not found !");
         let mut cnt = 0;
-        for entry in entries.iter() {
-            let offset = entry * (self.sb.block_size as usize) * SECTOR_SIZE;
+        for block in blocks.iter() {
+            let offset = block * (self.sb.block_size as usize) * SECTOR_SIZE;
             file.seek(SeekFrom::Start(offset as u64)).expect("File seek failed !");
             
             let data_block_start = cnt * (self.sb.block_size as usize) * SECTOR_SIZE;

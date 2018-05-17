@@ -24,7 +24,8 @@ pub struct MicroFS {
     pub image: String,
     pub sb: SuperBlock,
     pub fat: Vec<u8>,
-    pub entries: Vec<Entry>
+    pub entries: Vec<Entry>,
+    pub new_entries: Vec<Entry>
 }
 impl MicroFS {
     pub fn new(image: &str) -> MicroFS {
@@ -45,7 +46,8 @@ impl MicroFS {
                         image: image.to_string(),
                         sb: sb,
                         fat: Vec::new(),
-                        entries: Vec::new()
+                        entries: Vec::new(),
+                        new_entries: Vec::new()
                     };
                     fs.set_fat();
                     fs.set_entries();
@@ -58,7 +60,8 @@ impl MicroFS {
                 image: image.to_string(),
                 sb: mem::uninitialized(),
                 fat: Vec::new(),
-                entries:  Vec::new()
+                entries:  Vec::new(),
+                new_entries: Vec::new()
             };
         }
     }
