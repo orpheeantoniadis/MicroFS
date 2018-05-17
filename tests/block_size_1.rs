@@ -58,9 +58,9 @@ fn add() {
     test_fs.create("test", 1, 100000);
     test_fs.add("tests/test1.txt");
     
-    assert_eq!(bytes_to_str(&test_fs.entries[0].name), "tests/test1.txt");
-    assert_eq!(test_fs.entries[0].start, 3);
-    assert_eq!(test_fs.entries[0].size, fs::metadata("tests/test1.txt").expect("Failed getting metadata!").len() as u32);
+    assert_eq!(bytes_to_str(&test_fs.new_entries[0].name), "tests/test1.txt");
+    assert_eq!(test_fs.new_entries[0].start, 3);
+    assert_eq!(test_fs.new_entries[0].size, fs::metadata("tests/test1.txt").expect("Failed getting metadata!").len() as u32);
     
     fs::remove_file("fs1_test.img").expect("Failed removing the file");
 }
@@ -84,9 +84,8 @@ fn save() {
     assert_eq!(test_fs.fat, cmp_fs.fat);
     
     cmp_fs.set_entries();
-    assert_eq!(test_fs.entries[0].name, cmp_fs.entries[0].name);
-    assert_eq!(test_fs.entries[0].start, cmp_fs.entries[0].start);
-    assert_eq!(test_fs.entries[0].size, cmp_fs.entries[0].size);
+    assert_eq!(test_fs.new_entries[0].start, cmp_fs.entries[0].start);
+    assert_eq!(test_fs.new_entries[0].size, cmp_fs.entries[0].size);
     
     let mut raw_data = [0; SECTOR_SIZE];
     let mut file = File::open(test_fs.image.clone()).expect("File not found !");
@@ -120,7 +119,7 @@ fn remove() {
     assert_eq!(&cmp_fs.fat[..], &[0xff; 195][..]);
     
     cmp_fs.set_entries();
-    assert_eq!(cmp_fs.entries.len(), 0);
+    assert_eq!(cmp_fs.new_entries.len(), 0);
     
     fs::remove_file("fs1_test.img").expect("Failed removing the file");
 }

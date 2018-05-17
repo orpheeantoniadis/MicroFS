@@ -9,5 +9,12 @@ impl MicroFS {
             }
         }
         self.entries.retain(|e| bytes_to_str(&e.name) != filename.clone()); 
+        for entry in self.new_entries.clone() {
+            if bytes_to_str(&entry.name) == filename.clone() {
+                let mut blocks = self.get_blocks(&mut entry.clone());
+                self.update_fat(&mut blocks, false);
+            }
+        }
+        self.new_entries.retain(|e| bytes_to_str(&e.name) != filename.clone()); 
     }
 }

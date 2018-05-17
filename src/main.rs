@@ -17,7 +17,6 @@ fn main() {
     let image = matches.value_of("image").unwrap();
     let mut fs = MicroFS::new(image);
     
-    println!("{:?}", matches.subcommand());
     match matches.subcommand() {
         ("create", Some(create_matches)) => {
             let label = create_matches.value_of("label").unwrap();
